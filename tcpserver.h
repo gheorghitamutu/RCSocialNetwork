@@ -30,6 +30,7 @@ class TCPServer
 public:
     TCPServer();
     int Run();
+
     //threads functions
     int ParseClientRequest(int index_fd); /* realizeaza primirea si retrimiterea unui mesaj unui client */
 private:
@@ -52,20 +53,15 @@ private:
     // databases
     DatabaseManagerMySQL* MariaDB;
 
-
-
     //clients vector
     std::vector<ClientManager*> clients_list;
 
-
-    // timeout
-    long long timeout;
-
-    // add client
+    // clients
     void AddClient(int descriptor);
     ClientManager* GetClient(int descriptor);
 
-
+    // clients requests actions
+    void Register(char* user_credentials_buffer);
 };
 
 #endif // TCPSERVER_H

@@ -7,9 +7,6 @@ TCPServer::TCPServer()
 
     // TO DO: sqlitedb needs a separate function after an user registers on mariadb/app
     //this->SQLiteDB = new DatabaseManagerSQLite(MariaDB->GetUserId("dummy@email.com"));
-
-    this->timeout = 600; //1 minutes
-
 }
 
 int TCPServer::Run()
@@ -175,6 +172,17 @@ int TCPServer::ParseClientRequest(int fd)
     // TO DO:
     // DATABASE ACTION
 
+    int action;
+    memcpy(&action, msgReceived, sizeof(int));
+
+    switch(action)
+    {
+        case 1:
+            Register(msgReceived);
+        break;
+        default:
+        break;
+    }
 
 
 
@@ -186,7 +194,7 @@ int TCPServer::ParseClientRequest(int fd)
 
     printf("[server]Trimitem mesajul inapoi...%s\n", msgSent);
 
-    if (bytes && write (fd, msgSent, bytes) < 0)
+    if (write (fd, msgSent, bytes) < 0)
     {
         perror ("[server] Eroare la write() catre client.\n");
         return 0;
@@ -210,6 +218,40 @@ ClientManager *TCPServer::GetClient(int descriptor)
         }
     }
     return NULL;
+}
+
+void TCPServer::Register(char *user_credentials_buffer)
+{
+    char* temp_name = new char[256];
+    memset(temp_name, 0, 256);
+
+    char* temp_pass = new char[256];
+    memset(temp_pass, 0, 256);
+
+    int index = sizeof(int) + 1;
+    int index02 = 0;
+    while(user_credentials_buffer[index] != ',')
+    {
+        temp_name[index02] = user_credentials_buffer[index];
+        index02++;
+        index++;
+    }
+
+    index++;
+    index02 = 0;
+    while(user_credentials_buffer[index] != '\0')
+    {
+        temp_pass[index02] = user_credentials_buffer[index];
+        index02++;
+        index++;
+    }
+
+    MariaDB->AddUser(QString(temp_name), QString(temp_pass));
+
+
+    delete temp_name;
+    delete temp_pass;
+
 }
 
 void wrapper_request(class TCPServer *tcpServer, int descriptor)
