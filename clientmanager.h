@@ -10,8 +10,6 @@ public:
     ClientManager(int descriptor);
     ~ClientManager();
 
-    void UpdateTimestamp();
-    long long GetTimestamp();
     void SetLogged(bool logged);
     void SetDescriptor(int descriptor);
     int GetDescriptor();
@@ -20,9 +18,6 @@ public:
 private:
     int descriptor;
     bool logged;
-    long long timestamp;
-
-
 
     DatabaseManagerSQLite* SQLiteDB;
 };

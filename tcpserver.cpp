@@ -195,37 +195,6 @@ int TCPServer::ParseClientRequest(int fd)
     return bytes;
 }
 
-void TCPServer::CheckClientsTimeout()
-{
-    long long current_timestamp;
-
-    while(1)
-    {
-        current_timestamp = QDateTime::currentDateTime().toSecsSinceEpoch();
-
-        std::vector< ClientManager* >::iterator it = clients_list.begin();
-
-        while(it != clients_list.end())
-        {
-            if(current_timestamp - (*it)->GetTimestamp() < this->timeout)
-            {
-                close ((*it)->GetDescriptor());		/* inchidem conexiunea cu clientul */
-                FD_CLR ((*it)->GetDescriptor(), &active_fd_list);/* scoatem si din multime */
-                delete (*it);
-                it = clients_list.erase(it);
-                /* ajustam multimea descriptorilor activi (efectiv utilizati) */
-                bcopy ((char *) &active_fd_list, (char *) &read_fd_list, sizeof (read_fd_list));
-            }
-            else
-            {
-                it++;
-            }
-        }
-        qDebug() << "Thread sleeps now!";
-        sleep(this->timeout);
-    }
-}
-
 void TCPServer::AddClient(int descriptor)
 {
     this->clients_list.emplace_back(new ClientManager(descriptor));
