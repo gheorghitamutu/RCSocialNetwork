@@ -2,7 +2,6 @@
 
 ClientManager::ClientManager(int descriptor)
 {
-    UpdateTimestamp();
     SetDescriptor(descriptor);
     SetLogged(false);
     SetSQLiteDB(NULL);
@@ -14,16 +13,6 @@ ClientManager::~ClientManager()
     {
         delete this->SQLiteDB;
     }
-}
-
-void ClientManager::UpdateTimestamp()
-{
-    this->timestamp = QDateTime::currentDateTime().toSecsSinceEpoch();
-}
-
-long long ClientManager::GetTimestamp()
-{
-    return this->timestamp;
 }
 
 void ClientManager::SetLogged(bool logged)

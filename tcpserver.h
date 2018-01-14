@@ -31,7 +31,6 @@ public:
     TCPServer();
     int Run();
     //threads functions
-    void CheckClientsTimeout();
     int ParseClientRequest(int index_fd); /* realizeaza primirea si retrimiterea unui mesaj unui client */
 private:
     struct sockaddr_in sockServer;	/* structurile pentru server si clienti */
