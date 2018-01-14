@@ -3,165 +3,247 @@
 TCPServer::TCPServer()
 {
 
+    this->MariaDB = new DatabaseManagerMySQL;
+
+    // TO DO: sqlitedb needs a separate function after an user registers on mariadb/app
+    //this->SQLiteDB = new DatabaseManagerSQLite(MariaDB->GetUserId("dummy@email.com"));
+
+    this->timeout = 600; //1 minutes
+
 }
 
-void TCPServer::Run()
+int TCPServer::Run()
 {
-    struct sockaddr_in server;	/* structurile pentru server si clienti */
-    struct sockaddr_in from;
-    fd_set readfds;		/* multimea descriptorilor de citire */
-    fd_set actfds;		/* multimea descriptorilor activi */
-    struct timeval tv;		/* structura de timp pentru select() */
-    int sd, client;		/* descriptori de socket */
-    int optval=1; 			/* optiune folosita pentru setsockopt()*/
-    int fd;			/* descriptor folosit pentru  parcurgerea listelor de descriptori */
-    int nfds;			/* numarul maxim de descriptori */
-    int len;			/* lungimea structurii sockaddr_in */
-
     /* creare socket */
-    if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
-                {
-                              perror ("[server] Eroare la socket().\n");
-                                    return errno;
-                                        }
+    if ((socket_descriptor = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        perror ("[server] Eroare la socket().\n");
+        return errno;
+    }
 
     /*setam pentru socket optiunea SO_REUSEADDR */
-    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,&optval,sizeof(optval));
+    setsockopt(socket_descriptor, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
     /* pregatim structurile de date */
-    bzero (&server, sizeof (server));
+    bzero (&sockServer, sizeof (sockServer));
 
     /* umplem structura folosita de server */
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = htonl (INADDR_ANY);
-    server.sin_port = htons (PORT);
+    sockServer.sin_family = AF_INET;
+    sockServer.sin_addr.s_addr = htonl (INADDR_ANY);
+    sockServer.sin_port = htons (PORT);
 
     /* atasam socketul */
-    if (bind (sd, (struct sockaddr *) &server, sizeof (struct sockaddr)) == -1)
+    if (bind (socket_descriptor, (struct sockaddr *) &sockServer, sizeof (struct sockaddr)) == -1)
     {
         perror ("[server] Eroare la bind().\n");
         return errno;
     }
 
-    /* punem serverul sa asculte daca vin clienti sa se conecteze */
-    if (listen (sd, 5) == -1)
+    /* punem serverul sa asculte daca vin MAX_CONNECTIONS clienti sa se conecteze */
+    if (listen (socket_descriptor, MAX_CONNECTIONS) == -1)
     {
         perror ("[server] Eroare la listen().\n");
         return errno;
     }
 
     /* completam multimea de descriptori de citire */
-    FD_ZERO (&actfds);		/* initial, multimea este vida */
-    FD_SET (sd, &actfds);		/* includem in multime socketul creat */
+    FD_ZERO (&active_fd_list);		/* initial, multimea este vida */
+    FD_SET (socket_descriptor, &active_fd_list);		/* includem in multime socketul creat */
 
     tv.tv_sec = 1;		/* se va astepta un timp de 1 sec. */
     tv.tv_usec = 0;
 
     /* valoarea maxima a descriptorilor folositi */
-    nfds = sd;
+    count_used_fd = socket_descriptor;
 
     printf ("[server] Asteptam la portul %d...\n", PORT);
     fflush (stdout);
 
     /* servim in mod concurent clientii... */
+    std::vector<std::thread*> th_array;
     while (1)
     {
+        for(auto tread: th_array)
+        {
+            tread->join();
+        }
+        th_array.clear();
+
+
         /* ajustam multimea descriptorilor activi (efectiv utilizati) */
-        bcopy ((char *) &actfds, (char *) &readfds, sizeof (readfds));
+        bcopy ((char *) &active_fd_list, (char *) &read_fd_list, sizeof (read_fd_list));
 
         /* apelul select() */
-        if (select (nfds+1, &readfds, NULL, NULL, &tv) < 0)
+        if (select (count_used_fd+1, &read_fd_list, NULL, NULL, &tv) < 0)
         {
             perror ("[server] Eroare la select().\n");
             return errno;
         }
+
+
         /* vedem daca e pregatit socketul pentru a-i accepta pe clienti */
-        if (FD_ISSET (sd, &readfds))
+        if (FD_ISSET (socket_descriptor, &read_fd_list))
         {
             /* pregatirea structurii client */
-            len = sizeof (from);
-            bzero (&from, sizeof (from));
+            len = sizeof (sockClient);
+            bzero (&sockClient, sizeof (sockClient));
 
             /* a venit un client, acceptam conexiunea */
-            client = accept (sd, (struct sockaddr *) &from, &len);
+            fd_client = accept (socket_descriptor, (struct sockaddr *) &sockClient, (socklen_t *)(&len));
 
             /* eroare la acceptarea conexiunii de la un client */
-            if (client < 0)
+            if (fd_client < 0)
             {
                 perror ("[server] Eroare la accept().\n");
                 continue;
             }
-            if (nfds < client) /* ajusteaza valoarea maximului */
+            else
             {
-                         nfds = client;
+                AddClient(fd_client);
+            }
+            if (count_used_fd < fd_client) /* ajusteaza valoarea maximului */
+            {
+                count_used_fd = fd_client;
             }
             /* includem in lista de descriptori activi si acest socket */
-            FD_SET (client, &actfds);
-            printf("[server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n",client, conv_addr (from));
+            FD_SET (fd_client, &active_fd_list);
+            printf("[server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n",fd_client, conv_addr (sockClient));
             fflush (stdout);
         }
+
+
         /* vedem daca e pregatit vreun socket client pentru a trimite raspunsul */
-        for (fd = 0; fd <= nfds; fd++)	/* parcurgem multimea de descriptori */
+        for (index_fd = 0; index_fd <= count_used_fd; index_fd++)	/* parcurgem multimea de descriptori */
         {
             /* este un socket de citire pregatit? */
-            if (fd != sd && FD_ISSET (fd, &readfds))
+            if (index_fd != socket_descriptor && FD_ISSET (index_fd, &read_fd_list))
             {
-                if (sayHello(fd))
-                {
-                    printf ("[server] S-a deconectat clientul cu descriptorul %d.\n",fd);
-                    fflush (stdout);
-                    close (fd);		/* inchidem conexiunea cu clientul */
-                    FD_CLR (fd, &actfds);/* scoatem si din multime */
-                }
+                th_array.emplace_back(new std::thread(wrapper_request, this, index_fd));
             }
-        } /* for */
-    }/* while */
+        }
+    }
 }
 
-
-/* functie de convertire a adresei IP a clientului in sir de caractere */
 char* TCPServer::conv_addr (struct sockaddr_in address)
 {
     static char str[25];
-      char port[7];
+    char port[7];
 
-        /* adresa IP a clientului */
-        strcpy (str, inet_ntoa (address.sin_addr));
-          /* portul utilizat de client */
-          bzero (port, 7);
-            sprintf (port, ":%d", ntohs (address.sin_port));
-              strcat (str, port);
-                return (str);
+    /* adresa IP a clientului */
+    strcpy (str, inet_ntoa (address.sin_addr));
+    /* portul utilizat de client */
+    bzero (port, 7);
+    sprintf (port, ":%d", ntohs (address.sin_port));
+    strcat (str, port);
+    return (str);
 }
 
-/* realizeaza primirea si retrimiterea unui mesaj unui client */
-int TCPServer::sayHello(int fd)
+int TCPServer::ParseClientRequest(int fd)
 {
+    ClientManager* client = GetClient(fd);
+    if(client == NULL)
+    {
+          printf("No client with this descriptor!\n");
+          fflush(stdout);
+          return 0;
+    }
+
     char buffer[100];		/* mesajul */
-      int bytes;			/* numarul de octeti cititi/scrisi */
-        char msg[100];		//mesajul primit de la client
-          char msgrasp[100]=" ";        //mesaj de raspuns pentru client
+    int bytes;			/* numarul de octeti cititi/scrisi */
+    char msgReceived[100];		//mesajul primit de la client
+    char msgSent[100]=" ";        //mesaj de raspuns pentru client
 
-            bytes = read (fd, msg, sizeof (buffer));
-              if (bytes < 0)
-                          {
-                                        perror ("Eroare la read() de la client.\n");
-                                              return 0;
-                                                  }
-                printf ("[server]Mesajul a fost receptionat...%s\n", msg);
+    bytes = read (fd, msgReceived, sizeof (buffer));
+    if (bytes < 0)
+    {
+        perror ("Eroare la read() de la client.\n");
+        return 0;
+    }
+    else if(bytes == 0)
+    {
+        printf("[server] Client with descriptor %d disconnected!\n", fd);
+        close (client->GetDescriptor());		/* inchidem conexiunea cu clientul */
+        FD_CLR (client->GetDescriptor(), &active_fd_list);/* scoatem si din multime */
 
-                  /*pregatim mesajul de raspuns */
-                  bzero(msgrasp,100);
-                    strcat(msgrasp,"Hello ");
-                      strcat(msgrasp,msg);
+        clients_list.erase(std::remove(clients_list.begin(), clients_list.end(), client), clients_list.end());
+        delete client;
+        client =  NULL;
+        return 0;
+    }
+    printf ("[server]Mesajul a fost receptionat...%s\n", msgReceived);
 
-                        printf("[server]Trimitem mesajul inapoi...%s\n",msgrasp);
+    // TO DO:
+    // DATABASE ACTION
 
-                          if (bytes && write (fd, msgrasp, bytes) < 0)
-                                      {
-                                                    perror ("[server] Eroare la write() catre client.\n");
-                                                          return 0;
-                                                              }
 
-                            return bytes;
+
+
+
+    /*pregatim mesajul de raspuns */
+    bzero(msgSent, 100);
+    strcat(msgSent, "Hello ");
+    strcat(msgSent, msgReceived);
+
+    printf("[server]Trimitem mesajul inapoi...%s\n", msgSent);
+
+    if (bytes && write (fd, msgSent, bytes) < 0)
+    {
+        perror ("[server] Eroare la write() catre client.\n");
+        return 0;
+    }
+
+    return bytes;
+}
+
+void TCPServer::CheckClientsTimeout()
+{
+    long long current_timestamp;
+
+    while(1)
+    {
+        current_timestamp = QDateTime::currentDateTime().toSecsSinceEpoch();
+
+        std::vector< ClientManager* >::iterator it = clients_list.begin();
+
+        while(it != clients_list.end())
+        {
+            if(current_timestamp - (*it)->GetTimestamp() < this->timeout)
+            {
+                close ((*it)->GetDescriptor());		/* inchidem conexiunea cu clientul */
+                FD_CLR ((*it)->GetDescriptor(), &active_fd_list);/* scoatem si din multime */
+                delete (*it);
+                it = clients_list.erase(it);
+                /* ajustam multimea descriptorilor activi (efectiv utilizati) */
+                bcopy ((char *) &active_fd_list, (char *) &read_fd_list, sizeof (read_fd_list));
+            }
+            else
+            {
+                it++;
+            }
+        }
+        qDebug() << "Thread sleeps now!";
+        sleep(this->timeout);
+    }
+}
+
+void TCPServer::AddClient(int descriptor)
+{
+    this->clients_list.emplace_back(new ClientManager(descriptor));
+}
+
+ClientManager *TCPServer::GetClient(int descriptor)
+{
+    for(auto client: clients_list)
+    {
+        if(client->GetDescriptor() == descriptor)
+        {
+            return client;
+        }
+    }
+    return NULL;
+}
+
+void wrapper_request(class TCPServer *tcpServer, int descriptor)
+{
+    tcpServer->ParseClientRequest(descriptor);
 }
