@@ -30,6 +30,7 @@ public:
     bool ChangeUserType(int id_user, int user_type); // 0 - usual, 1 - admin
     bool DeleteUser(int id_user);
     int GetUserId(QString email);
+    bool CheckEmailPassword(QString email, QString password);
 
     bool CreatePostsTable();
     bool AddPost(int id_user, QString post, int post_type);

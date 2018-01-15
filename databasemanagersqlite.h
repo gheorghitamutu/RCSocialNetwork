@@ -7,12 +7,12 @@
 #define FRIENDS_TABLE_NAME "friends"
 #define ROOMS_TABLE_NAME "rooms"
 #define SETTINGS_TABLE_NAME "settings"
-#define DB_PATH "D:\\SQLite Databases\\"
+#define DB_PATH ""
 
 class DatabaseManagerSQLite
 {
 public:
-    DatabaseManagerSQLite(int db_name);
+    DatabaseManagerSQLite();
     ~DatabaseManagerSQLite();
     bool CreateConnection(int db_name);
     bool CloseConnection();
@@ -31,6 +31,8 @@ public:
     bool AddSettings(QString name);
 
     bool DeleteDatabase(int db_name); // try using this with current db only
+
+    bool CreateAllTables();
 private:
     QSqlDatabase db;
     QSqlQuery* query = NULL;

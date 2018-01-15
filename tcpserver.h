@@ -61,7 +61,8 @@ private:
     ClientManager* GetClient(int descriptor);
 
     // clients requests actions
-    void Register(char* user_credentials_buffer);
+    bool Register(char* user_credentials_buffer); // returns true if account was succesfully created
+    int Login(char* user_credentials_buffer);   // returns the id of the user in mariadb if login was successfull
 };
 
 #endif // TCPSERVER_H

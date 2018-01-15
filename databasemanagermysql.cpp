@@ -814,6 +814,38 @@ int DatabaseManagerMySQL::GetUserId(QString email)
     return userID;
 }
 
+bool DatabaseManagerMySQL::CheckEmailPassword(QString email, QString password)
+{
+    query = new QSqlQuery(db);
+
+    query->prepare( "SELECT * FROM " +
+                    QString(USERS_TABLE_NAME) +
+                    " WHERE email = ? and password = ?");
+
+    QByteArray passwordHash = QCryptographicHash::hash(password.toLocal8Bit(),
+                                                       QCryptographicHash::Md5);
+
+    query->addBindValue(email);
+    query->addBindValue(passwordHash);
+
+    if(!query->exec())
+    {
+        qDebug() << query->lastError().text();
+        delete query;
+        query = NULL;
+        return false;
+    }
+
+    qDebug() << QString("Login ")
+             + email
+             + QString(" succesfully!");
+    db.commit();
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
 DatabaseManagerMySQL::~DatabaseManagerMySQL()
 {
     if(query != NULL)

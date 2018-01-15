@@ -148,7 +148,7 @@ int TCPServer::ParseClientRequest(int fd)
     char buffer[100];		/* mesajul */
     int bytes;			/* numarul de octeti cititi/scrisi */
     char msgReceived[100];		//mesajul primit de la client
-    char msgSent[100]=" ";        //mesaj de raspuns pentru client
+    char msgSent[100]="";        //mesaj de raspuns pentru client
 
     bytes = read (fd, msgReceived, sizeof (buffer));
     if (bytes < 0)
@@ -172,25 +172,36 @@ int TCPServer::ParseClientRequest(int fd)
     // TO DO:
     // DATABASE ACTION
 
+    /*pregatim mesajul de raspuns */
+    bzero(msgSent, 100);
+
     int action;
-    memcpy(&action, msgReceived, sizeof(int));
+    memcpy(&action, msgReceived, 1);
 
     switch(action)
     {
         case 1:
-            Register(msgReceived);
+            if(Register(msgReceived))
+            {
+                strcat(msgSent, "1");
+            }
+            else
+            {
+                strcat(msgSent, "-1");
+            }
         break;
-        default:
+        case 2:
+            int id = Login(msgReceived);
+            if(id)
+            {
+                memcpy(msgSent, &id, sizeof(int));
+            }
+            else
+            {
+                strcat(msgSent, "-1");
+            }
         break;
     }
-
-
-
-
-    /*pregatim mesajul de raspuns */
-    bzero(msgSent, 100);
-    strcat(msgSent, "Hello ");
-    strcat(msgSent, msgReceived);
 
     printf("[server]Trimitem mesajul inapoi...%s\n", msgSent);
 
@@ -220,19 +231,19 @@ ClientManager *TCPServer::GetClient(int descriptor)
     return NULL;
 }
 
-void TCPServer::Register(char *user_credentials_buffer)
+bool TCPServer::Register(char *user_credentials_buffer)
 {
-    char* temp_name = new char[256];
-    memset(temp_name, 0, 256);
+    char* temp_email = new char[MAX_INPUT];
+    memset(temp_email, 0, MAX_INPUT);
 
-    char* temp_pass = new char[256];
-    memset(temp_pass, 0, 256);
+    char* temp_pass = new char[MAX_INPUT];
+    memset(temp_pass, 0, MAX_INPUT);
 
-    int index = sizeof(int) + 1;
+    int index = 1; // should eventually change if there are more than 9 types of requests
     int index02 = 0;
     while(user_credentials_buffer[index] != ',')
     {
-        temp_name[index02] = user_credentials_buffer[index];
+        temp_email[index02] = user_credentials_buffer[index];
         index02++;
         index++;
     }
@@ -246,12 +257,61 @@ void TCPServer::Register(char *user_credentials_buffer)
         index++;
     }
 
-    MariaDB->AddUser(QString(temp_name), QString(temp_pass));
+    bool action;
+    action = MariaDB->AddUser(QString(temp_email), QString(temp_pass));
+
+    if(action)
+    {
+        DatabaseManagerSQLite * SQLiteDB = new DatabaseManagerSQLite();
+        action = action && SQLiteDB->CreateConnection(MariaDB->GetUserId(QString(temp_email)));
+    }
 
 
-    delete temp_name;
+    delete temp_email;
     delete temp_pass;
 
+    return action;
+}
+
+int TCPServer::Login(char *user_credentials_buffer)
+{
+    char* temp_email = new char[MAX_INPUT];
+    memset(temp_email, 0, MAX_INPUT);
+
+    char* temp_pass = new char[MAX_INPUT];
+    memset(temp_pass, 0, MAX_INPUT);
+
+    int index = 1; // should eventually change if there are more than 9 types of requests
+    int index02 = 0;
+    while(user_credentials_buffer[index] != ',')
+    {
+        temp_email[index02] = user_credentials_buffer[index];
+        index02++;
+        index++;
+    }
+
+    index++;
+    index02 = 0;
+    while(user_credentials_buffer[index] != '\0')
+    {
+        temp_pass[index02] = user_credentials_buffer[index];
+        index02++;
+        index++;
+    }
+
+    bool action;
+    action = MariaDB->CheckEmailPassword(QString(temp_email), QString(temp_pass));
+
+    if(action)
+    {
+        action = MariaDB->GetUserId(QString(temp_email));
+    }
+
+
+    delete temp_email;
+    delete temp_pass;
+
+    return action;
 }
 
 void wrapper_request(class TCPServer *tcpServer, int descriptor)

@@ -1,8 +1,8 @@
 #include "databasemanagersqlite.h"
 
-DatabaseManagerSQLite::DatabaseManagerSQLite(int db_name)
+DatabaseManagerSQLite::DatabaseManagerSQLite()
 {
-    CreateConnection(db_name);
+
 }
 
 DatabaseManagerSQLite::~DatabaseManagerSQLite()
@@ -32,14 +32,14 @@ bool DatabaseManagerSQLite::CreateConnection(int db_name)
         db = QSqlDatabase::database(QString::number(db_name));
         qDebug() << QString("SQLite Database ")
                  + QString::number(db_name)
-                 + QString(" existing!");
+                 + QString(" exists!");
     }
     QString path = QString(DB_PATH) + QString::number(db_name) + QString(".db");
     qDebug() << path;
     db.setDatabaseName(path);
     db.open();
 
-    return true;
+    return CreateAllTables();
 }
 
 bool DatabaseManagerSQLite::CreateFriendsTable()
@@ -293,6 +293,11 @@ bool DatabaseManagerSQLite::DeleteDatabase(int db_name)
                 + QString::number(db_name);
 
     return true;
+}
+
+bool DatabaseManagerSQLite::CreateAllTables()
+{
+    return CreateFriendsTable() && CreateRoomsTable() && CreateSettingsTable();
 }
 
 bool DatabaseManagerSQLite::CreateSettingsTable()
