@@ -2,11 +2,7 @@
 
 TCPServer::TCPServer()
 {
-
     this->MariaDB = new DatabaseManagerMySQL;
-
-    // TO DO: sqlitedb needs a separate function after an user registers on mariadb/app
-    //this->SQLiteDB = new DatabaseManagerSQLite(MariaDB->GetUserId("dummy@email.com"));
 }
 
 int TCPServer::Run()

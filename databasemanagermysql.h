@@ -1,3 +1,5 @@
+// https://stackoverflow.com/questions/9367624/can-i-make-two-columns-unique-to-each-other
+
 #ifndef DATABASEMANAGER_H
 #define DATABASEMANAGER_H
 
@@ -8,6 +10,8 @@
 #define POSTS_TABLE_NAME "posts"
 #define COMMENTS_TABLE_NAME "comments"
 #define MESSAGES_TABLE_NAME "messages"
+#define MYSQL_ROOMS_TABLE_NAME "rooms"
+#define LIKES_TABLE_NAME "likes"
 
 #define HOST_NAME "localhost"
 #define USER_NAME "root"
@@ -35,7 +39,6 @@ public:
     bool CreatePostsTable();
     bool AddPost(int id_user, QString post, int post_type);
     bool UpdatePost(int id_post, QString updated_post);
-    bool UpdatePostLikes(int id_post, int like); // add or decrease by one
     bool ChangePostType(int id_post, int post_type);
     bool DeletePost(int id_post);
 
@@ -48,6 +51,14 @@ public:
     bool CreateMessagesTable();
     bool AddMessage(int id_room, int id_user, QString message);
     bool DeleteMessage(int id_message);
+
+    bool CreateRoomsTable();
+    bool AddRoom(int id_room, int id_owner);
+    bool DeleteRoom(int id_room, int id_owner);
+
+    bool CreateLikesTable();
+    bool AddLike(int id_post, int id_owner); // primary key being boths args
+    bool DeleteLike(int id_post, int id_owner);
 
     bool CreateConnection();
     bool CloseConnection();

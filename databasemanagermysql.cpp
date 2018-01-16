@@ -7,6 +7,8 @@ DatabaseManagerMySQL::DatabaseManagerMySQL()
     CreatePostsTable();
     CreateCommentsTable();
     CreateMessagesTable();
+    CreateRoomsTable();
+    CreateLikesTable();
 }
 
 bool DatabaseManagerMySQL::CreateConnection()
@@ -28,7 +30,7 @@ bool DatabaseManagerMySQL::CreateConnection()
 
     if (!db.open())
     {
-        qDebug() << db.lastError().text();
+        qDebug() << QString("[Database] ") + db.lastError().text();
         return false;
     }
 
@@ -64,15 +66,15 @@ bool DatabaseManagerMySQL::CreateUsersTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create users table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create users table!");
             return false;
         }
-        qDebug() << QString("Users table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Users table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Users table exists!");
+        qDebug() << QString("[Database] ") + QString("Users table exists!");
     }
 
     delete query;
@@ -99,15 +101,15 @@ bool DatabaseManagerMySQL::CreatePostsTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create posts table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create posts table!");
             return false;
         }
-        qDebug() << QString("Posts table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Posts table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Posts table exists!");
+        qDebug() << QString("[Database] ") + QString("Posts table exists!");
     }
 
     delete query;
@@ -133,13 +135,13 @@ bool DatabaseManagerMySQL::AddPost(int id_user, QString post, int post_type)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
+        qDebug() << QString("[Database] ") + query->lastError().text();
         delete query;
         query = NULL;
         return false;
     }
 
-    qDebug() << QString("Added post \"")
+    qDebug() << QString("[Database] ") + QString("Added post \"")
              + post
              + QString("\" by user ")
              + QString::number(id_user)
@@ -166,80 +168,15 @@ bool DatabaseManagerMySQL::UpdatePost(int id_post, QString updated_post)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed updating post!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed updating post!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Post updated: ") + updated_post;
-    }
-
-    delete query;
-    query = NULL;
-    return true;
-}
-
-bool DatabaseManagerMySQL::UpdatePostLikes(int id_post, int like)
-{
-    query = new QSqlQuery(db);
-
-    query->prepare( "SELECT likes FROM " +
-                    QString(POSTS_TABLE_NAME) +
-                    " WHERE id_post = ?;");
-    query->addBindValue(id_post);
-
-    int likes;
-
-    if(!query->exec())
-    {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed getting number of likes!");
-        delete query;
-        query = NULL;
-        return false;
-    }
-    else
-    {
-        query->first();
-        likes = query->value(0).toInt();
-        qDebug() << QString("This post has ")
-                    + QString::number(likes)
-                    + QString(" likes!");
-    }
-
-    delete query;
-    query = NULL;
-
-
-    likes += like;
-
-    query = new QSqlQuery(db);
-
-    query->prepare( "UPDATE " +
-                    QString(POSTS_TABLE_NAME) +
-                    " SET likes = ?"
-                    " WHERE id_post = ?;");
-    query->addBindValue(likes);
-    query->addBindValue(id_post);
-
-    if(!query->exec())
-    {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing the number of likes!");
-        delete query;
-        query = NULL;
-        return false;
-    }
-    else
-    {
-        qDebug() << QString("Post with id ")
-                    + QString::number(id_post)
-                    + (" has now ")
-                    + QString::number(likes)
-                    + QString(" likes!");
+        qDebug() << QString("[Database] ") + QString("Post updated: ") + updated_post;
     }
 
     delete query;
@@ -260,15 +197,15 @@ bool DatabaseManagerMySQL::ChangePostType(int id_post, int post_type)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing post type!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed changing post type!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Post type changed to: ") + QString::number(post_type);
+        qDebug() << QString("[Database] ") + QString("Post type changed to: ") + QString::number(post_type);
     }
 
     delete query;
@@ -286,15 +223,15 @@ bool DatabaseManagerMySQL::DeletePost(int id_post)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed deleting post ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed deleting post ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Deleted post ID: ") + QString::number(id_post);
+        qDebug() << QString("[Database] ") + QString("Deleted post ID: ") + QString::number(id_post);
     }
 
     delete query;
@@ -321,15 +258,15 @@ bool DatabaseManagerMySQL::CreateCommentsTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create comments table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create comments table!");
             return false;
         }
-        qDebug() << QString("Comments table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Comments table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Comments table exists!");
+        qDebug() << QString("[Database] ") + QString("Comments table exists!");
     }
 
     delete query;
@@ -355,14 +292,14 @@ bool DatabaseManagerMySQL::AddComment(int id_post, int id_user, QString comment)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed to add comment!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed to add comment!");
         delete query;
         query = NULL;
         return false;
     }
 
-    qDebug() << QString("Added comment \"")
+    qDebug() << QString("[Database] ") + QString("Added comment \"")
              + comment
              + QString("\" by user ")
              + QString::number(id_user)
@@ -389,15 +326,15 @@ bool DatabaseManagerMySQL::UpdateComment(int id_comment, QString updated_comment
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed updating comment!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed updating comment!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Comment updated: ") + updated_comment;
+        qDebug() << QString("[Database] ") + QString("Comment updated: ") + updated_comment;
     }
 
     delete query;
@@ -418,8 +355,8 @@ bool DatabaseManagerMySQL::UpdateCommentLikes(int id_comment, int like)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed getting number of likes for this comment!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed getting number of likes for this comment!");
         delete query;
         query = NULL;
         return false;
@@ -428,7 +365,7 @@ bool DatabaseManagerMySQL::UpdateCommentLikes(int id_comment, int like)
     {
         query->first();
         likes = query->value(0).toInt();
-        qDebug() << QString("This comment has ")
+        qDebug() << QString("[Database] ") + QString("This comment has ")
                     + QString::number(likes)
                     + QString(" likes!");
     }
@@ -450,15 +387,15 @@ bool DatabaseManagerMySQL::UpdateCommentLikes(int id_comment, int like)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing the number of likes for this comment!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed changing the number of likes for this comment!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Comment with id ")
+        qDebug() << QString("[Database] ") + QString("Comment with id ")
                     + QString::number(id_comment)
                     + (" has now ")
                     + QString::number(likes)
@@ -480,15 +417,15 @@ bool DatabaseManagerMySQL::DeleteComment(int id_comment)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed deleting comment ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed deleting comment ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Deleted comment ID: ") + QString::number(id_comment);
+        qDebug() << QString("[Database] ") + QString("Deleted comment ID: ") + QString::number(id_comment);
     }
 
     delete query;
@@ -513,15 +450,15 @@ bool DatabaseManagerMySQL::CreateMessagesTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create messages table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create messages table!");
             return false;
         }
-        qDebug() << QString("Messages table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Messages table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Messages table exists!");
+        qDebug() << QString("[Database] ") + QString("Messages table exists!");
     }
 
     delete query;
@@ -545,14 +482,14 @@ bool DatabaseManagerMySQL::AddMessage(int id_room, int id_user, QString message)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed to add message!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed to add message!");
         delete query;
         query = NULL;
         return false;
     }
 
-    qDebug() << QString("Added message \"")
+    qDebug() << QString("[Database] ") + QString("Added message \"")
              + message
              + QString("\" by user ")
              + QString::number(id_user)
@@ -575,15 +512,201 @@ bool DatabaseManagerMySQL::DeleteMessage(int id_message)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed deleting message ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed deleting message ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Deleted post ID: ") + QString::number(id_message);
+        qDebug() << QString("[Database] ") + QString("Deleted post ID: ") + QString::number(id_message);
+    }
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
+bool DatabaseManagerMySQL::CreateRoomsTable()
+{
+    query = new QSqlQuery(db);
+
+    if (!db.tables().contains(MYSQL_ROOMS_TABLE_NAME))
+    {
+        query->prepare( "CREATE TABLE " + QString(MYSQL_ROOMS_TABLE_NAME) + " ("
+                        "id_room MEDIUMINT NOT NULL AUTO_INCREMENT, "
+                        "id_owner MEDIUMINT NOT NULL, "
+                        "date_created DATETIME NOT NULL, "
+                        "PRIMARY KEY (id_room));");
+        if(!query->exec())
+        {
+            delete query;
+            query = NULL;
+            qDebug() << QString("[Database] ") + QString("Failed to create rooms table!");
+            return false;
+        }
+        qDebug() << QString("[Database] ") + QString("Rooms table succesfully created!");
+        db.commit();
+    }
+    else
+    {
+        qDebug() << QString("[Database] ") + QString("Rooms table exists!");
+    }
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
+bool DatabaseManagerMySQL::AddRoom(int id_room, int id_owner)
+{
+    query = new QSqlQuery(db);
+
+    query->prepare( "INSERT INTO " +
+                    QString(MYSQL_ROOMS_TABLE_NAME) +
+                    " (id_room, id_owner, date_created) "
+                    "VALUES (?, ?, ?)");
+
+    query->addBindValue(id_room);
+    query->addBindValue(id_owner);
+    query->addBindValue(QDateTime::currentDateTime().toString(Qt::ISODate));
+
+    if(!query->exec())
+    {
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed to add room!");
+        delete query;
+        query = NULL;
+        return false;
+    }
+
+    qDebug() << QString("[Database] ") + QString("Added room \"")
+             + QString::number(id_room)
+             + QString("\" by owner ")
+             + QString::number(id_owner)
+             + QString(" succesfully!");
+
+    db.commit();
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
+bool DatabaseManagerMySQL::DeleteRoom(int id_room, int id_owner)
+{
+    query = new QSqlQuery(db);
+    query->prepare( "DELETE FROM " +
+                    QString(MYSQL_ROOMS_TABLE_NAME) +
+                    " WHERE id_room = ? AND id_owner = ?");
+    query->addBindValue(id_room);
+    query->addBindValue(id_owner);
+
+    if(!query->exec())
+    {
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed deleting room ID!");
+        delete query;
+        query = NULL;
+        return false;
+    }
+    else
+    {
+        qDebug() << QString("[Database] ") + QString("Deleted room ID: ") + QString::number(id_room);
+    }
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
+bool DatabaseManagerMySQL::CreateLikesTable()
+{
+    query = new QSqlQuery(db);
+
+    if (!db.tables().contains(LIKES_TABLE_NAME))
+    {
+        query->prepare( "CREATE TABLE " + QString(LIKES_TABLE_NAME) + " ("
+                        "id_post MEDIUMINT NOT NULL AUTO_INCREMENT, "
+                        "id_owner MEDIUMINT NOT NULL, "
+                        "date_created DATETIME NOT NULL, "
+                        "PRIMARY KEY (id_post, id_owner));");
+        if(!query->exec())
+        {
+            delete query;
+            query = NULL;
+            qDebug() << QString("[Database] ") + QString("Failed to create likes table!");
+            return false;
+        }
+        qDebug() << QString("[Database] ") + QString("Likes table succesfully created!");
+        db.commit();
+    }
+    else
+    {
+        qDebug() << QString("[Database] ") + QString("Likes table exists!");
+    }
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
+bool DatabaseManagerMySQL::AddLike(int id_post, int id_owner)
+{
+    query = new QSqlQuery(db);
+
+    query->prepare( "INSERT INTO " +
+                    QString(LIKES_TABLE_NAME) +
+                    " (id_post, id_owner, date_created) "
+                    "VALUES (?, ?, ?)");
+
+    query->addBindValue(id_post);
+    query->addBindValue(id_owner);
+    query->addBindValue(QDateTime::currentDateTime().toString(Qt::ISODate));
+
+    if(!query->exec())
+    {
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed to add like!");
+        delete query;
+        query = NULL;
+        return false;
+    }
+
+    qDebug() << QString("[Database] ") + QString("Added like on post \"")
+             + QString::number(id_post)
+             + QString("\" by owner ")
+             + QString::number(id_owner)
+             + QString(" succesfully!");
+
+    db.commit();
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
+bool DatabaseManagerMySQL::DeleteLike(int id_post, int id_owner)
+{
+    query = new QSqlQuery(db);
+    query->prepare( "DELETE FROM " +
+                    QString(LIKES_TABLE_NAME) +
+                    " WHERE id_post = ? AND id_owner = ?");
+    query->addBindValue(id_post);
+    query->addBindValue(id_owner);
+
+    if(!query->exec())
+    {
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed deleting like!");
+        delete query;
+        query = NULL;
+        return false;
+    }
+    else
+    {
+        qDebug() << QString("[Database] ") + QString("Deleted like on post: ") + QString::number(id_post);
     }
 
     delete query;
@@ -611,13 +734,13 @@ bool DatabaseManagerMySQL::AddUser(QString email, QString password)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
+        qDebug() << QString("[Database] ") + query->lastError().text();
         delete query;
         query = NULL;
         return false;
     }
 
-    qDebug() << QString("Added user ")
+    qDebug() << QString("[Database] ") + QString("Added user ")
              + email
              + QString(" succesfully!");
     db.commit();
@@ -641,15 +764,15 @@ bool DatabaseManagerMySQL::UpdateUserEmail(int id_user, QString email)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing user email!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed changing user email!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("User with id ") + QString::number(id_user)
+        qDebug() << QString("[Database] ") + QString("User with id ") + QString::number(id_user)
                     + (", email changed to: ") + email;
     }
 
@@ -678,15 +801,15 @@ bool DatabaseManagerMySQL::UpdateUserPassword(int id_user, QString password)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing user password!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed changing user password!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("User with id ")
+        qDebug() << QString("[Database] ") + QString("User with id ")
                     + QString::number(id_user)
                     + (", password changed!");
     }
@@ -706,15 +829,15 @@ bool DatabaseManagerMySQL::DeleteUser(int id_user)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed deleting user ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed deleting user ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Deleted user ID: ") + QString::number(id_user);
+        qDebug() << QString("[Database] ") + QString("Deleted user ID: ") + QString::number(id_user);
     }
 
     delete query;
@@ -735,15 +858,15 @@ bool DatabaseManagerMySQL::ChangeUserStatus(int id_user, bool logged)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing user status!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed changing user status!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("User status changed to: ")
+        qDebug() << QString("[Database] ") + QString("User status changed to: ")
                     + QString::number(logged);
     }
 
@@ -765,15 +888,15 @@ bool DatabaseManagerMySQL::ChangeUserType(int id_user, int user_type)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing user type!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed changing user type!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("User type changed to: ")
+        qDebug() << QString("[Database] ") + QString("User type changed to: ")
                     + QString::number(user_type);
     }
 
@@ -795,8 +918,8 @@ int DatabaseManagerMySQL::GetUserId(QString email)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed getting user ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed getting user ID!");
         delete query;
         query = NULL;
         return 0;
@@ -805,7 +928,7 @@ int DatabaseManagerMySQL::GetUserId(QString email)
     {
         query->first();
         userID = query->value(0).toInt();
-        qDebug() << QString("User ID: ")
+        qDebug() << QString("[Database] ") + QString("User ID: ")
                     + QString::number(userID);
     }
 
@@ -830,13 +953,13 @@ bool DatabaseManagerMySQL::CheckEmailPassword(QString email, QString password)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
+        qDebug() << QString("[Database] ") + query->lastError().text();
         delete query;
         query = NULL;
         return false;
     }
 
-    qDebug() << QString("Login ")
+    qDebug() << QString("[Database] ") + QString("Login ")
              + email
              + QString(" succesfully!");
     db.commit();
