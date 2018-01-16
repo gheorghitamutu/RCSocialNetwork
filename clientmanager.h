@@ -14,11 +14,13 @@ public:
     void SetDescriptor(int descriptor);
     int GetDescriptor();
     void SetSQLiteDB(DatabaseManagerSQLite* SQLiteDB);
+    void SetId(int id);
+    int GetId();
 
 private:
     int descriptor;
     bool logged;
-
+    int id;
     DatabaseManagerSQLite* SQLiteDB;
 };
 

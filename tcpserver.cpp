@@ -159,12 +159,15 @@ int TCPServer::ParseClientRequest(int fd)
     else if(bytes == 0)
     {
         printf("[server] Client with descriptor %d disconnected!\n", fd);
+        Logout(fd);
         close (client->GetDescriptor());		/* inchidem conexiunea cu clientul */
         FD_CLR (client->GetDescriptor(), &active_fd_list);/* scoatem si din multime */
 
         clients_list.erase(std::remove(clients_list.begin(), clients_list.end(), client), clients_list.end());
         delete client;
         client =  NULL;
+
+
         return 0;
     }
     printf ("[server]Mesajul a fost receptionat...%s\n", msgReceived);
@@ -175,7 +178,7 @@ int TCPServer::ParseClientRequest(int fd)
     /*pregatim mesajul de raspuns */
     bzero(msgSent, 100);
 
-    int action;
+    int action, id;
     memcpy(&action, msgReceived, 1);
 
     switch(action)
@@ -191,10 +194,20 @@ int TCPServer::ParseClientRequest(int fd)
             }
         break;
         case 2:
-            int id = Login(msgReceived);
+            id = Login(msgReceived, fd);
             if(id)
             {
                 memcpy(msgSent, &id, sizeof(int));
+            }
+            else
+            {
+                strcat(msgSent, "-1");
+            }
+        break;
+        case 3:
+            if(Logout(fd))
+            {
+                strcat(msgSent, "1");
             }
             else
             {
@@ -273,7 +286,7 @@ bool TCPServer::Register(char *user_credentials_buffer)
     return action;
 }
 
-int TCPServer::Login(char *user_credentials_buffer)
+int TCPServer::Login(char *user_credentials_buffer, int fd)
 {
     char* temp_email = new char[MAX_INPUT];
     memset(temp_email, 0, MAX_INPUT);
@@ -305,13 +318,24 @@ int TCPServer::Login(char *user_credentials_buffer)
     if(action)
     {
         action = MariaDB->GetUserId(QString(temp_email));
+        MariaDB->ChangeUserStatus(GetClient(fd)->GetId(), true);
     }
 
 
     delete temp_email;
     delete temp_pass;
 
+    GetClient(fd)->SetId(action);
     return action;
+}
+
+bool TCPServer::Logout(int fd)
+{
+
+    GetClient(fd)->SetLogged(false);
+    GetClient(fd)->SetId(0);
+    GetClient(fd)->SetSQLiteDB(NULL);
+    return MariaDB->ChangeUserStatus(GetClient(fd)->GetId(), false);
 }
 
 void wrapper_request(class TCPServer *tcpServer, int descriptor)

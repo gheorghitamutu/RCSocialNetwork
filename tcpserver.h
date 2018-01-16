@@ -62,7 +62,8 @@ private:
 
     // clients requests actions
     bool Register(char* user_credentials_buffer); // returns true if account was succesfully created
-    int Login(char* user_credentials_buffer);   // returns the id of the user in mariadb if login was successfull
+    int Login(char* user_credentials_buffer, int fd);   // returns the id of the user in mariadb if login was successfull
+    bool Logout(int fd);
 };
 
 #endif // TCPSERVER_H

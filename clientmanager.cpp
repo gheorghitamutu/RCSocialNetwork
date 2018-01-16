@@ -32,5 +32,19 @@ int ClientManager::GetDescriptor()
 
 void ClientManager::SetSQLiteDB(DatabaseManagerSQLite *SQLiteDB)
 {
+    if(this->SQLiteDB != NULL)
+    {
+        delete this->SQLiteDB;
+    }
     this->SQLiteDB = SQLiteDB;
+}
+
+void ClientManager::SetId(int id)
+{
+    this->id = id;
+}
+
+int ClientManager::GetId()
+{
+    return this->id;
 }
