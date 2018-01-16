@@ -537,6 +537,7 @@ bool DatabaseManagerMySQL::CreateRoomsTable()
         query->prepare( "CREATE TABLE " + QString(MYSQL_ROOMS_TABLE_NAME) + " ("
                         "id_room MEDIUMINT NOT NULL AUTO_INCREMENT, "
                         "id_owner MEDIUMINT NOT NULL, "
+                        "room_name TEXT(1024) NOT NULL, "
                         "date_created DATETIME NOT NULL, "
                         "PRIMARY KEY (id_room));");
         if(!query->exec())
@@ -559,17 +560,18 @@ bool DatabaseManagerMySQL::CreateRoomsTable()
     return true;
 }
 
-bool DatabaseManagerMySQL::AddRoom(int id_room, int id_owner)
+bool DatabaseManagerMySQL::AddRoom(int id_room, int id_owner, QString room_name)
 {
     query = new QSqlQuery(db);
 
     query->prepare( "INSERT INTO " +
                     QString(MYSQL_ROOMS_TABLE_NAME) +
-                    " (id_room, id_owner, date_created) "
-                    "VALUES (?, ?, ?)");
+                    " (id_room, id_owner, room_name date_created) "
+                    "VALUES (?, ?, ?, ?)");
 
     query->addBindValue(id_room);
     query->addBindValue(id_owner);
+    query->addBindValue(room_name);
     query->addBindValue(QDateTime::currentDateTime().toString(Qt::ISODate));
 
     if(!query->exec())

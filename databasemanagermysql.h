@@ -53,7 +53,7 @@ public:
     bool DeleteMessage(int id_message);
 
     bool CreateRoomsTable();
-    bool AddRoom(int id_room, int id_owner);
+    bool AddRoom(int id_room, int id_owner, QString room_name);
     bool DeleteRoom(int id_room, int id_owner);
 
     bool CreateLikesTable();
