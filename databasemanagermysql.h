@@ -38,7 +38,7 @@ public:
 
     bool CreatePostsTable();
     bool AddPost(int id_user, QString post, int post_type);
-    bool UpdatePost(int id_post, QString updated_post);
+    bool UpdatePost(int id_post, QString updated_post, int post_type);
     bool ChangePostType(int id_post, int post_type);
     bool DeletePost(int id_post);
 

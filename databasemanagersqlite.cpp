@@ -105,16 +105,18 @@ bool DatabaseManagerSQLite::AddFriend(int id_friend, int friend_type)
     return true;
 }
 
-bool DatabaseManagerSQLite::ChangeFriendsStatus(int friend_status)
+bool DatabaseManagerSQLite::ChangeFriendsStatus(int id_friend, int friend_status)
 {
     query = new QSqlQuery(db);
 
     query->prepare( "UPDATE " +
                     QString(FRIENDS_TABLE_NAME) +
                     " SET friend_status = ?, "
-                    "date_added = ?;");
+                    "date_added = ? "
+                    "WHERE id_friend = ?;");
     query->addBindValue(friend_status);
     query->addBindValue(QDateTime::currentDateTime().toString(Qt::ISODate));
+    query->addBindValue(id_friend);
 
     if(!query->exec())
     {

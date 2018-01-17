@@ -39,6 +39,11 @@ void ClientManager::SetSQLiteDB(DatabaseManagerSQLite *SQLiteDB)
     this->SQLiteDB = SQLiteDB;
 }
 
+DatabaseManagerSQLite *ClientManager::GetSQLiteDB()
+{
+    return this->SQLiteDB;
+}
+
 void ClientManager::SetId(int id)
 {
     this->id = id;

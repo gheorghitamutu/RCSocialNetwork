@@ -210,6 +210,26 @@ int TCPServer::ParseClientRequest(int fd)
                 strcat(msgSent, "-1");
             }
         break;
+        case 4:
+            if(UpdateFriend(msgReceived, fd))
+            {
+                strcat(msgSent, "1");
+            }
+            else
+            {
+                strcat(msgSent, "-1");
+            }
+        break;
+        case 5:
+            if(UpdatePost(msgReceived, fd))
+            {
+                strcat(msgSent, "1");
+            }
+            else
+            {
+                strcat(msgSent, "-1");
+            }
+        break;
     }
 
     printf("[server]Trimitem mesajul inapoi...%s\n", msgSent);
@@ -308,20 +328,22 @@ int TCPServer::Login(char *user_credentials_buffer, int fd)
         index++;
     }
 
-    bool action;
+    int action;
     action = MariaDB->CheckEmailPassword(QString(temp_email), QString(temp_pass));
 
     if(action)
     {
         action = MariaDB->GetUserId(QString(temp_email));
-        MariaDB->ChangeUserStatus(GetClient(fd)->GetId(), true);
+        MariaDB->ChangeUserStatus(action, true);
+        GetClient(fd)->SetSQLiteDB(new DatabaseManagerSQLite());
+        GetClient(fd)->GetSQLiteDB()->CreateConnection(action);
+        GetClient(fd)->SetId(action);
     }
 
 
     delete temp_email;
     delete temp_pass;
 
-    GetClient(fd)->SetId(action);
     return action;
 }
 
@@ -332,6 +354,107 @@ bool TCPServer::Logout(int fd)
     GetClient(fd)->SetId(0);
     GetClient(fd)->SetSQLiteDB(NULL);
     return MariaDB->ChangeUserStatus(GetClient(fd)->GetId(), false);
+}
+
+bool TCPServer::UpdateFriend(char *user_credentials_buffer, int fd)
+{
+    char* temp_email = new char[MAX_INPUT];
+    memset(temp_email, 0, MAX_INPUT);
+
+
+    int index = 1; // should eventually change if there are more than 9 types of requests
+    int index02 = 0;
+    while(user_credentials_buffer[index] != '|')
+    {
+        temp_email[index02] = user_credentials_buffer[index];
+        index02++;
+        index++;
+    }
+
+    int friend_id = MariaDB->GetUserId(QString(temp_email));
+    if(friend_id == 0)
+    {
+        delete temp_email;
+        return 0;
+    }
+
+    index+=2; // separator ||
+
+    bool action = 0;
+    if(user_credentials_buffer[index] == '0')
+    {
+        action = GetClient(fd)->GetSQLiteDB()->AddFriend(friend_id, 0);
+    }
+    else if (user_credentials_buffer[index] == '1')
+    {
+        index++;
+        if(user_credentials_buffer[index] == '1')
+        {
+            action = GetClient(fd)->GetSQLiteDB()->ChangeFriendsStatus(friend_id, 1);
+        }
+        else if(user_credentials_buffer[index] == '0')
+        {
+            action = GetClient(fd)->GetSQLiteDB()->ChangeFriendsStatus(friend_id, 0);
+        }
+    }
+    else if (user_credentials_buffer[index] == '2')
+    {
+        action = GetClient(fd)->GetSQLiteDB()->DeleteFriend(friend_id);
+    }
+
+    delete temp_email;
+    return action;
+}
+
+bool TCPServer::UpdatePost(char *user_credentials_buffer, int fd)
+{
+    char* temp_post = new char[MAX_INPUT];
+    memset(temp_post, 0, MAX_INPUT);
+
+
+    int index = 1; // should eventually change if there are more than 9 types of requests
+    int index02 = 0;
+    while(user_credentials_buffer[index] != '|')
+    {
+        temp_post[index02] = user_credentials_buffer[index];
+        index02++;
+        index++;
+    }
+
+    index+=2; // separator ||
+
+    bool action = 0;
+    if(user_credentials_buffer[index] == '0')
+    {
+        index++;
+        if(user_credentials_buffer[index] == '0')
+        {
+            action = MariaDB->AddPost(GetClient(fd)->GetId(), QString(temp_post), 0);
+        }
+        else if(user_credentials_buffer[index] == '1')
+        {
+            action = MariaDB->AddPost(GetClient(fd)->GetId(), QString(temp_post), 1);
+        }
+    }
+    else if (user_credentials_buffer[index] == '1')
+    {
+        index++;
+        if(user_credentials_buffer[index] == '0')
+        {
+            action = MariaDB->UpdatePost(0, QString(temp_post), 0); // dummy id
+        }
+        else if(user_credentials_buffer[index] == '1')
+        {
+            action = MariaDB->UpdatePost(0, QString(temp_post), 1); // dummy id
+        }
+    }
+    else if (user_credentials_buffer[index] == '2')
+    {
+        action = MariaDB->DeletePost(0); // dummy id
+    }
+
+    delete temp_post;
+    return action;
 }
 
 void wrapper_request(class TCPServer *tcpServer, int descriptor)

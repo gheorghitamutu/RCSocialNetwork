@@ -154,15 +154,16 @@ bool DatabaseManagerMySQL::AddPost(int id_user, QString post, int post_type)
     return true;
 }
 
-bool DatabaseManagerMySQL::UpdatePost(int id_post, QString updated_post)
+bool DatabaseManagerMySQL::UpdatePost(int id_post, QString updated_post, int post_type)
 {
     query = new QSqlQuery(db);
 
     query->prepare( "UPDATE " +
                     QString(POSTS_TABLE_NAME) +
-                    " SET post = ?, date_updated = ?"
+                    " SET post = ?, post_type = ?, date_updated = ?"
                     " WHERE id_post = ?;");
     query->addBindValue(updated_post);
+    query->addBindValue(post_type);
     query->addBindValue(QDateTime::currentDateTime().toString(Qt::ISODate));
     query->addBindValue(id_post);
 
@@ -916,7 +917,7 @@ int DatabaseManagerMySQL::GetUserId(QString email)
                     " WHERE email = ?;");
     query->addBindValue(email);
 
-    int userID;
+    int userID = 0;
 
     if(!query->exec())
     {

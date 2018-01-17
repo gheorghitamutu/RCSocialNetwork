@@ -14,6 +14,7 @@ public:
     void SetDescriptor(int descriptor);
     int GetDescriptor();
     void SetSQLiteDB(DatabaseManagerSQLite* SQLiteDB);
+    DatabaseManagerSQLite *GetSQLiteDB();
     void SetId(int id);
     int GetId();
 

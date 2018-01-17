@@ -19,7 +19,7 @@ public:
 
     bool CreateFriendsTable();
     bool AddFriend(int id_friend, int friend_type);
-    bool ChangeFriendsStatus(int friend_status);
+    bool ChangeFriendsStatus(int id_friend, int friend_status);
     bool DeleteFriend(int id_friend);
 
     bool CreateRoomsTable();
