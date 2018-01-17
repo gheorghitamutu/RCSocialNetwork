@@ -240,6 +240,83 @@ bool DatabaseManagerMySQL::DeletePost(int id_post)
     return true;
 }
 
+char *DatabaseManagerMySQL::GetLastTenPosts()
+{
+    query = new QSqlQuery(db);
+
+    query->prepare( "SELECT * FROM ( SELECT * FROM " +
+                    QString(POSTS_TABLE_NAME) +
+                    " ORDER BY id_post DESC LIMIT 50 ) AS T ORDER by id_post DESC;");
+
+    char* rows = new char[MAX_INPUT * 32];
+    memset(rows, 0, MAX_INPUT * 32);
+
+    char sep[3] = {1,1,1};
+
+    if(!query->exec())
+    {
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        qDebug() << QString("[Database] ") + QString("Failed getting user ID!");
+        delete query;
+        query = NULL;
+        return 0;
+    }
+    else
+    {
+        query->first();
+        strcat(rows, query->value(0).toString().toLatin1().data());
+        strncat(rows, sep, 3);
+       // strcat(rows, QString::number(query->value(2).toInt()).toLatin1().data());
+        strcat(rows, query->value(2).toString().toLatin1().data());
+        strncat(rows, sep, 3);
+        while(query->next())
+        {
+            strcat(rows, query->value(0).toString().toLatin1().data());
+            strncat(rows, sep, 3);
+            strcat(rows, query->value(2).toString().toLatin1().data());
+            strncat(rows, sep, 3);
+        }
+    }
+
+    qDebug() << QString("[Database] ") + QString("Get last 10 posts!");
+
+    delete query;
+    query = NULL;
+    return rows;
+}
+
+bool DatabaseManagerMySQL::CheckEmailPassword(QString email, QString password)
+{
+    query = new QSqlQuery(db);
+
+    query->prepare( "SELECT * FROM " +
+                    QString(USERS_TABLE_NAME) +
+                    " WHERE email = ? and password = ?");
+
+    QByteArray passwordHash = QCryptographicHash::hash(password.toLocal8Bit(),
+                                                       QCryptographicHash::Md5);
+
+    query->addBindValue(email);
+    query->addBindValue(passwordHash);
+
+    if(!query->exec())
+    {
+        qDebug() << QString("[Database] ") + query->lastError().text();
+        delete query;
+        query = NULL;
+        return false;
+    }
+
+    qDebug() << QString("[Database] ") + QString("Login ")
+             + email
+             + QString(" succesfully!");
+    db.commit();
+
+    delete query;
+    query = NULL;
+    return true;
+}
+
 bool DatabaseManagerMySQL::CreateCommentsTable()
 {
     query = new QSqlQuery(db);
@@ -938,38 +1015,6 @@ int DatabaseManagerMySQL::GetUserId(QString email)
     delete query;
     query = NULL;
     return userID;
-}
-
-bool DatabaseManagerMySQL::CheckEmailPassword(QString email, QString password)
-{
-    query = new QSqlQuery(db);
-
-    query->prepare( "SELECT * FROM " +
-                    QString(USERS_TABLE_NAME) +
-                    " WHERE email = ? and password = ?");
-
-    QByteArray passwordHash = QCryptographicHash::hash(password.toLocal8Bit(),
-                                                       QCryptographicHash::Md5);
-
-    query->addBindValue(email);
-    query->addBindValue(passwordHash);
-
-    if(!query->exec())
-    {
-        qDebug() << QString("[Database] ") + query->lastError().text();
-        delete query;
-        query = NULL;
-        return false;
-    }
-
-    qDebug() << QString("[Database] ") + QString("Login ")
-             + email
-             + QString(" succesfully!");
-    db.commit();
-
-    delete query;
-    query = NULL;
-    return true;
 }
 
 DatabaseManagerMySQL::~DatabaseManagerMySQL()

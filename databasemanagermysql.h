@@ -41,6 +41,7 @@ public:
     bool UpdatePost(int id_post, QString updated_post, int post_type);
     bool ChangePostType(int id_post, int post_type);
     bool DeletePost(int id_post);
+    char *GetLastTenPosts();
 
     bool CreateCommentsTable();
     bool AddComment(int id_post, int id_user, QString comment);

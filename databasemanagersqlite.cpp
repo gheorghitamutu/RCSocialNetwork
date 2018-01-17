@@ -23,19 +23,19 @@ bool DatabaseManagerSQLite::CreateConnection(int db_name)
     if(!QSqlDatabase::contains(QString::number(db_name)))
     {
         db = QSqlDatabase::addDatabase("QSQLITE", QString::number(db_name));
-        qDebug() << QString("SQLite Database ")
+        qDebug() << QString("[Database] ") + QString("SQLite Database ")
                  + QString::number(db_name)
                  + QString(" created!");
     }
     else
     {
         db = QSqlDatabase::database(QString::number(db_name));
-        qDebug() << QString("SQLite Database ")
+        qDebug() << QString("[Database] ") + QString("SQLite Database ")
                  + QString::number(db_name)
                  + QString(" exists!");
     }
     QString path = QString(DB_PATH) + QString::number(db_name) + QString(".db");
-    qDebug() << path;
+    qDebug() << QString("[Database] ") + path;
     db.setDatabaseName(path);
     db.open();
 
@@ -57,15 +57,15 @@ bool DatabaseManagerSQLite::CreateFriendsTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create friends table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create friends table!");
             return false;
         }
-        qDebug() << QString("Friends table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Friends table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Friends table exists!");
+        qDebug() << QString("[Database] ") + QString("Friends table exists!");
     }
 
     delete query;
@@ -87,15 +87,14 @@ bool DatabaseManagerSQLite::AddFriend(int id_friend, int friend_type)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed adding friend ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text() + QString("Failed adding friend ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Friend ID ") + QString::number(id_friend)
+        qDebug() << QString("[Database] ") + QString("Friend ID ") + QString::number(id_friend)
                     + QString( " as type ") + QString::number(friend_type)
                     + QString( " with status 0!");
     }
@@ -120,15 +119,14 @@ bool DatabaseManagerSQLite::ChangeFriendsStatus(int id_friend, int friend_status
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing friend status!");
+        qDebug() << QString("[Database] ") + query->lastError().text() + QString("Failed changing friend status!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Friend status changed to: ")
+        qDebug() << QString("[Database] ") + QString("Friend status changed to: ")
                     + QString::number(friend_status);
     }
 
@@ -147,8 +145,7 @@ bool DatabaseManagerSQLite::DeleteFriend(int id_friend)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed deleting friend ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text() + QString("Failed deleting friend ID!");
         delete query;
         query = NULL;
         return false;
@@ -178,15 +175,15 @@ bool DatabaseManagerSQLite::CreateRoomsTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create rooms table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create rooms table!");
             return false;
         }
-        qDebug() << QString("Rooms table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Rooms table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Rooms table exists!");
+        qDebug() << QString("[Database] ") + QString("Rooms table exists!");
     }
 
     delete query;
@@ -206,15 +203,14 @@ bool DatabaseManagerSQLite::AddRoom(int id_room)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed adding room ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text() + QString("Failed adding room ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Room ID: ") + QString::number(id_room);
+        qDebug() << QString("[Database] ") + QString("Room ID: ") + QString::number(id_room);
     }
 
     delete query;
@@ -232,15 +228,14 @@ bool DatabaseManagerSQLite::DeleteRoom(int id_room)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed deleting room ID!");
+        qDebug() << QString("[Database] ") + query->lastError().text() + QString("Failed deleting room ID!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("Deleted room ID: ")
+        qDebug() << QString("[Database] ") + QString("Deleted room ID: ")
                     + QString::number(id_room);
     }
 
@@ -262,15 +257,14 @@ bool DatabaseManagerSQLite::AddSettings(QString name)
 
     if(!query->exec())
     {
-        qDebug() << query->lastError().text();
-        qDebug() << QString("Failed adding user name!");
+        qDebug() << QString("[Database] ") + query->lastError().text() + QString("Failed adding user name!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("User name: ") + name;
+        qDebug() << QString("[Database] ") + QString("User name: ") + name;
     }
 
     delete query;
@@ -291,7 +285,7 @@ bool DatabaseManagerSQLite::DeleteDatabase(int db_name)
     QFile file(db_path);
     file.remove();
 
-    qDebug() << QString("Deleted database: ")
+    qDebug() << QString("[Database] ") + QString("Deleted database: ")
                 + QString::number(db_name);
 
     return true;
@@ -316,15 +310,15 @@ bool DatabaseManagerSQLite::CreateSettingsTable()
         {
             delete query;
             query = NULL;
-            qDebug() << QString("Failed to create settings table!");
+            qDebug() << QString("[Database] ") + QString("Failed to create settings table!");
             return false;
         }
-        qDebug() << QString("Settings table succesfully created!");
+        qDebug() << QString("[Database] ") + QString("Settings table succesfully created!");
         db.commit();
     }
     else
     {
-        qDebug() << QString("Settings table exists!");
+        qDebug() << QString("[Database] ") + QString("Settings table exists!");
     }
 
     delete query;
@@ -345,14 +339,14 @@ bool DatabaseManagerSQLite::ChangeUserName(QString name)
     if(!query->exec())
     {
         qDebug() << query->lastError().text();
-        qDebug() << QString("Failed changing user name!");
+        qDebug() << QString("[Database] ") + QString("Failed changing user name!");
         delete query;
         query = NULL;
         return false;
     }
     else
     {
-        qDebug() << QString("User name changed to: ") + name;
+        qDebug() << QString("[Database] ") + QString("User name changed to: ") + name;
     }
 
     delete query;

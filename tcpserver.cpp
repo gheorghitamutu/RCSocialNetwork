@@ -10,7 +10,7 @@ int TCPServer::Run()
     /* creare socket */
     if ((socket_descriptor = socket (AF_INET, SOCK_STREAM, 0)) == -1)
     {
-        perror ("[server] Eroare la socket().\n");
+        qDebug() << QString("[Server] ") + QString("Eroare la socket().");
         return errno;
     }
 
@@ -28,14 +28,14 @@ int TCPServer::Run()
     /* atasam socketul */
     if (bind (socket_descriptor, (struct sockaddr *) &sockServer, sizeof (struct sockaddr)) == -1)
     {
-        perror ("[server] Eroare la bind().\n");
+        qDebug() << QString("[Server] ") + QString("Eroare la bind().");
         return errno;
     }
 
     /* punem serverul sa asculte daca vin MAX_CONNECTIONS clienti sa se conecteze */
     if (listen (socket_descriptor, MAX_CONNECTIONS) == -1)
     {
-        perror ("[server] Eroare la listen().\n");
+        qDebug() << QString("[Server] ") + QString("Eroare la listen().");
         return errno;
     }
 
@@ -49,7 +49,7 @@ int TCPServer::Run()
     /* valoarea maxima a descriptorilor folositi */
     count_used_fd = socket_descriptor;
 
-    printf ("[server] Asteptam la portul %d...\n", PORT);
+    printf ("[Server] Asteptam la portul %d...\n", PORT);
     fflush (stdout);
 
     /* servim in mod concurent clientii... */
@@ -69,7 +69,7 @@ int TCPServer::Run()
         /* apelul select() */
         if (select (count_used_fd+1, &read_fd_list, NULL, NULL, &tv) < 0)
         {
-            perror ("[server] Eroare la select().\n");
+            qDebug() << QString("[Server] ") + QString("Eroare la select().");
             return errno;
         }
 
@@ -87,7 +87,7 @@ int TCPServer::Run()
             /* eroare la acceptarea conexiunii de la un client */
             if (fd_client < 0)
             {
-                perror ("[server] Eroare la accept().\n");
+               qDebug() << QString("[Server] ") + QString("Eroare la accept().");
                 continue;
             }
             else
@@ -100,7 +100,7 @@ int TCPServer::Run()
             }
             /* includem in lista de descriptori activi si acest socket */
             FD_SET (fd_client, &active_fd_list);
-            printf("[server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n",fd_client, conv_addr (sockClient));
+            printf("[Server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n",fd_client, conv_addr (sockClient));
             fflush (stdout);
         }
 
@@ -141,15 +141,15 @@ int TCPServer::ParseClientRequest(int fd)
           return 0;
     }
 
-    char buffer[100];		/* mesajul */
+    char buffer[MAX_INPUT * 32];		/* mesajul */
     int bytes;			/* numarul de octeti cititi/scrisi */
-    char msgReceived[100];		//mesajul primit de la client
-    char msgSent[100]="";        //mesaj de raspuns pentru client
+    char msgReceived[MAX_INPUT * 32];		//mesajul primit de la client
+    char msgSent[MAX_INPUT * 32]="";        //mesaj de raspuns pentru client
 
     bytes = read (fd, msgReceived, sizeof (buffer));
     if (bytes < 0)
     {
-        perror ("Eroare la read() de la client.\n");
+        qDebug() << QString("[Server] ") + QString("Eroare la read() de la client.\n");
         return 0;
     }
     else if(bytes == 0)
@@ -166,13 +166,10 @@ int TCPServer::ParseClientRequest(int fd)
 
         return 0;
     }
-    printf ("[server]Mesajul a fost receptionat...%s\n", msgReceived);
-
-    // TO DO:
-    // DATABASE ACTION
+    printf ("[Server] Mesajul a fost receptionat...%s\n", msgReceived);
 
     /*pregatim mesajul de raspuns */
-    bzero(msgSent, 100);
+    bzero(msgSent, MAX_INPUT * 32);
 
     int action, id;
     memcpy(&action, msgReceived, 1);
@@ -229,14 +226,17 @@ int TCPServer::ParseClientRequest(int fd)
             {
                 strcat(msgSent, "-1");
             }
-        break;
+         break;
+         case 6:
+             strcat(msgSent, MariaDB->GetLastTenPosts());
+         break;
     }
 
-    printf("[server]Trimitem mesajul inapoi...%s\n", msgSent);
+    printf("[Server] Trimitem mesajul inapoi...%s\n", msgSent);
 
-    if (write (fd, msgSent, bytes) < 0)
+    if (write (fd, msgSent, MAX_INPUT * 32) < 0)
     {
-        perror ("[server] Eroare la write() catre client.\n");
+        qDebug() << QString("[Server] ") + QString("Eroare la write() catre client.");
         return 0;
     }
 
